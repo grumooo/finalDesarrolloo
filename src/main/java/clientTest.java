@@ -18,7 +18,7 @@ public class clientTest {
                 out.println(mensaje);
                 System.out.println("Enviando: " + mensaje);
 
-                Thread.sleep(1000); // Esperar 1 segundo entre envíos
+                Thread.sleep(1000);
             }
 
         } catch (Exception e) {

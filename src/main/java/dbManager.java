@@ -79,7 +79,7 @@ public class dbManager {
                 pstmt.setString(indice++, fechaFiltro);
             }
             if (horaFiltro != null && !horaFiltro.isEmpty()) {
-                pstmt.setString(indice++, horaFiltro + "%"); // El % es el comodín
+                pstmt.setString(indice++, horaFiltro + "%");
             }
 
             try (ResultSet rs = pstmt.executeQuery()) {

@@ -28,10 +28,10 @@ public class grafica extends JPanel {
         dataset.addSeries(serieZ);
 
         JFreeChart chart = ChartFactory.createXYLineChart(
-                "Datos del Sensor en Tiempo Real", // Título
-                "Tiempo (s)",                      // Etiqueta Eje X
-                "Valor",                           // Etiqueta Eje Y
-                dataset,                           // Datos
+                "Datos del Sensor en Tiempo Real",
+                "Tiempo (s)",
+                "Valor",
+                dataset,
                 PlotOrientation.VERTICAL,
                 true, true, false
         );

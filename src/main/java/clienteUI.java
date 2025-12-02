@@ -39,7 +39,7 @@ public class clienteUI extends JFrame {
         SerialPort[] puertosDisponibles = SerialPort.getCommPorts();
         String[] nombresPuertos = new String[puertosDisponibles.length + 1];
 
-        nombresPuertos[0] = "Simulación"; // Opción por defecto
+        nombresPuertos[0] = "Simulación";
         for (int i = 0; i < puertosDisponibles.length; i++) {
             nombresPuertos[i + 1] = puertosDisponibles[i].getSystemPortName();
         }
@@ -62,7 +62,7 @@ public class clienteUI extends JFrame {
 
         JButton btnVolver1 = new JButton("Volver");
         btnVolver1.addActionListener(e -> {
-            detenerLecturaDatos(); // Asegurar que se detiene al salir
+            detenerLecturaDatos();
             btnAccion.setText("Iniciar");
             cardLayout.show(mainPanel, "INICIO");
         });
