@@ -1,14 +1,10 @@
 import javax.swing.*;
-import javax.swing.border.LineBorder;
 import java.awt.*;
 import com.github.lgooddatepicker.components.TimePicker;
 import com.github.lgooddatepicker.components.TimePickerSettings;
-import java.awt.event.ActionEvent;
 import java.io.PrintWriter;
-import java.net.Socket;
 import com.fazecast.jSerialComm.SerialPort;
 import java.util.Scanner;
-
 import com.github.lgooddatepicker.components.DatePicker;
 import com.github.lgooddatepicker.components.DatePickerSettings;
 
@@ -19,9 +15,11 @@ public class clienteUI extends JFrame {
 
     public clienteUI() {
         setTitle("Sistema de Monitoreo - Proyecto Final");
+        ImageIcon icon = new ImageIcon(getClass().getResource("/escudo-med-lema.gif"));
+        setIconImage(icon.getImage());
         setSize(800, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Centrar en pantalla
+        setLocationRelativeTo(null);
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
@@ -236,6 +234,7 @@ public class clienteUI extends JFrame {
                 System.out.println("Conectando a Arduino en " + puertoSeleccionado + "...");
                 SerialPort comPort = SerialPort.getCommPort(puertoSeleccionado);
                 comPort.setBaudRate(9600);
+                comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
 
                 if (comPort.openPort()) {
                     System.out.println("Puerto abierto exitosamente.");
@@ -243,7 +242,10 @@ public class clienteUI extends JFrame {
                         Thread.sleep(2000);
 
                         Scanner scanner = new Scanner(comPort.getInputStream());
+                        System.out.println(scanner.nextLine());
                         ejecutarBuclePrincipal(g, scanner, null);
+
+
 
                         scanner.close();
                     } catch (Exception ex) { ex.printStackTrace(); }
@@ -258,43 +260,59 @@ public class clienteUI extends JFrame {
     }
 
     private void ejecutarBuclePrincipal(grafica g, Scanner scannerArduino, java.util.Random randomSimulado) {
+        // Conexión al Servidor
         try (java.net.Socket socket = new java.net.Socket("localhost", 5000);
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
+
+            System.out.println("Conectado al servidor. Iniciando transmisión...");
 
             while (leyendo) {
                 int x = 0, y = 0, z = 0;
                 boolean datosValidos = false;
 
-                if (scannerArduino != null) {
-                    if (scannerArduino.hasNextLine()) {
-                        String linea = scannerArduino.nextLine();
-                        try {
-                            String[] partes = linea.split(",");
-                            x = Integer.parseInt(partes[0].split(":")[1].trim());
-                            y = Integer.parseInt(partes[1].split(":")[1].trim());
-                            z = Integer.parseInt(partes[2].split(":")[1].trim());
-                            datosValidos = true;
-                        } catch (Exception e) { System.out.println("Ignorando basura serial: " + linea); }
+                try {
+                    if (scannerArduino != null) {
+                        if (scannerArduino.hasNextLine()) {
+                            String linea = scannerArduino.nextLine();
+                            try {
+                                String[] partes = linea.split(",");
+                                x = Integer.parseInt(partes[0].split(":")[1].trim());
+                                y = Integer.parseInt(partes[1].split(":")[1].trim());
+                                z = Integer.parseInt(partes[2].split(":")[1].trim());
+                                datosValidos = true;
+                            } catch (Exception e) {
+                                System.out.println("Formato incorrecto del Arduino: " + linea);
+                            }
+                        }
+                    } else {
+                        x = randomSimulado.nextInt(50);
+                        y = randomSimulado.nextInt(50) + 50;
+                        z = randomSimulado.nextInt(50) + 100;
+                        datosValidos = true;
+                        try { Thread.sleep(1000); } catch (InterruptedException e) {}
                     }
-                } else {
-                    x = randomSimulado.nextInt(50);
-                    y = randomSimulado.nextInt(50) + 50;
-                    z = randomSimulado.nextInt(50) + 100;
-                    datosValidos = true;
-                    try { Thread.sleep(1000); } catch (InterruptedException e) {}
-                }
 
-                if (datosValidos) {
-                    final int fx = x, fy = y, fz = z;
-                    SwingUtilities.invokeLater(() -> g.agregarPunto(fx, fy, fz));
+                    if (datosValidos) {
+                        final int fx = x, fy = y, fz = z;
+                        SwingUtilities.invokeLater(() -> g.agregarPunto(fx, fy, fz));
 
-                    String datos = "x:" + x + ", y:" + y + ", z:" + z;
-                    out.println(seguridad.encriptar(datos));
-                    System.out.println("Enviando: " + datos);
+                        String datos = "x:" + x + ", y:" + y + ", z:" + z;
+                        out.println(seguridad.encriptar(datos));
+
+                        if (out.checkError()) {
+                            System.out.println("Error: El servidor cerró la conexión.");
+                            break;
+                        }
+                        System.out.println("Enviado: " + datos);
+                    }
+
+                } catch (Exception ex) {
+                    System.out.println("Error leve en el ciclo: " + ex.getMessage());
+                    try { Thread.sleep(100); } catch (InterruptedException i) {}
                 }
             }
         } catch (Exception e) {
-            System.out.println("Error enviando al servidor: " + e.getMessage());
+            System.out.println("Error crítico de conexión: " + e.getMessage());
         }
     }
 
